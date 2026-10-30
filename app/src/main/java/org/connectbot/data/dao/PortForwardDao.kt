@@ -51,6 +51,12 @@ interface PortForwardDao {
     suspend fun getById(id: UUID): PortForward?
 
     /**
+     * Get every port forward, used by bulk imports to skip duplicates.
+     */
+    @Query("SELECT * FROM port_forwards")
+    suspend fun getAll(): List<PortForward>
+
+    /**
      * Insert a new port forward.
      * @return The ID of the newly inserted port forward
      */

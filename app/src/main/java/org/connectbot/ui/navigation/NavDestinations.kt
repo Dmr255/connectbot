@@ -35,6 +35,7 @@ object NavDestinations {
     const val PROFILES = "profiles"
     const val PROFILE_EDITOR = "profile_editor"
     const val HELP = "help"
+    const val SSH_CONFIG = "ssh_config"
     const val EULA = "eula"
     const val HINTS = "hints"
     const val CONTACT = "contact"

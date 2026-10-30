@@ -52,6 +52,7 @@ import org.connectbot.ui.screens.profiles.ProfileListScreen
 import org.connectbot.ui.screens.pubkeyeditor.PubkeyEditorScreen
 import org.connectbot.ui.screens.pubkeylist.PubkeyListScreen
 import org.connectbot.ui.screens.settings.SettingsScreen
+import org.connectbot.ui.screens.sshconfig.SshConfigScreen
 import org.connectbot.util.IconStyle
 import timber.log.Timber
 import java.util.UUID
@@ -107,6 +108,9 @@ fun ConnectBotNavHost(
                     },
                     onNavigateToHelp = {
                         navController.navigateSafely(NavDestinations.HELP)
+                    },
+                    onNavigateToSshConfig = {
+                        navController.navigateSafely(NavDestinations.SSH_CONFIG)
                     },
                 )
             }
@@ -312,6 +316,12 @@ fun ConnectBotNavHost(
                     onNavigateToHints = { navController.navigateSafely(NavDestinations.HINTS) },
                     onNavigateToEula = { navController.navigateSafely(NavDestinations.EULA) },
                     onNavigateToContact = { navController.navigateSafely(NavDestinations.CONTACT) },
+                )
+            }
+
+            composable(NavDestinations.SSH_CONFIG) {
+                SshConfigScreen(
+                    onNavigateBack = { navController.safePopBackStack() },
                 )
             }
 

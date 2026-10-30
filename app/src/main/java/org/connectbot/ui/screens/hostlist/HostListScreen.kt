@@ -125,6 +125,7 @@ fun HostListScreen(
     modifier: Modifier = Modifier,
     makingShortcut: Boolean = false,
     onSelectShortcut: (Host, String?, IconStyle) -> Unit = { _, _, _ -> },
+    onNavigateToSshConfig: () -> Unit = {},
     viewModel: HostListViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -265,6 +266,7 @@ fun HostListScreen(
         onNavigateToPortForwards = onNavigateToPortForwards,
         onNavigateToProfiles = onNavigateToProfiles,
         onNavigateToHelp = onNavigateToHelp,
+        onNavigateToSshConfig = onNavigateToSshConfig,
         onToggleSortOrder = viewModel::toggleSortOrder,
         onDeleteHost = viewModel::deleteHost,
         onDuplicateHost = viewModel::duplicateHost,
@@ -289,6 +291,7 @@ fun HostListScreenContent(
     onNavigateToPortForwards: (Host) -> Unit,
     onNavigateToProfiles: () -> Unit,
     onNavigateToHelp: () -> Unit,
+    onNavigateToSshConfig: () -> Unit = {},
     onToggleSortOrder: () -> Unit,
     onDeleteHost: (Host) -> Unit,
     onDuplicateHost: (Host) -> Unit,
@@ -379,6 +382,13 @@ fun HostListScreenContent(
                                 onClick = {
                                     showMenu = false
                                     onImportHosts()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.list_menu_ssh_config)) },
+                                onClick = {
+                                    showMenu = false
+                                    onNavigateToSshConfig()
                                 },
                             )
                             DropdownMenuItem(

@@ -2432,4 +2432,44 @@
     <string name="keyboard_builtin_presets_help">Built-in presets stay unchanged. Editing creates your own copy.</string>
     <!-- Badge distinguishing an immutable keyboard template from a saved layout. -->
     <string name="keyboard_builtin_preset">Built-in preset</string>
+
+    <!-- SSH config import/export screen -->
+    <!-- Screen title and menu entry for editing an OpenSSH client config. -->
+    <string name="ssh_config_title">SSH config</string>
+    <!-- Host list menu item that opens the SSH config editor. -->
+    <string name="list_menu_ssh_config">SSH config</string>
+    <!-- Editor field label for the raw ssh_config text. -->
+    <string name="ssh_config_editor_label">ssh_config</string>
+    <!-- Button that parses the text and opens the import preview. -->
+    <string name="ssh_config_preview">Preview</string>
+    <!-- Button that fills the editor with hosts already saved in ConnectBot. -->
+    <string name="ssh_config_load_current">Load current hosts</string>
+    <!-- Button that fills the editor with a short example document. -->
+    <string name="ssh_config_load_example">Insert example</string>
+    <!-- Button that applies the selected import changes. -->
+    <string name="ssh_config_import_confirm">Import %1$d hosts</string>
+    <!-- Button that returns from the preview to the raw text editor. -->
+    <string name="ssh_config_back_to_edit">Back to editor</string>
+    <!-- Heading above the list of imported blocks in the preview. -->
+    <string name="ssh_config_preview_hosts">Hosts</string>
+    <!-- Heading above skipped or unsupported parts of the document. -->
+    <string name="ssh_config_preview_problems">Not imported</string>
+    <!-- Badge for a block that will create a new ConnectBot host. -->
+    <string name="ssh_config_badge_new">New</string>
+    <!-- Badge for a block that will update an existing ConnectBot host. -->
+    <string name="ssh_config_badge_update">Update</string>
+    <!-- Badge for a block the user chose not to import. -->
+    <string name="ssh_config_badge_skip">Skip</string>
+    <!-- Label for the per-host decision control in the preview. -->
+    <string name="ssh_config_decision">Action</string>
+    <!-- Line describing a changed host field. Parameters: %1$s = field, %2$s = current value, %3$s = new value -->
+    <string name="ssh_config_change">%1$s: %2$s → %3$s</string>
+    <!-- Shown when an imported config contains no usable Host blocks. -->
+    <string name="ssh_config_no_hosts">No importable Host blocks found</string>
+    <!-- Result summary after importing. Parameters: %1$d = created, %2$d = updated, %3$d = forwards -->
+    <string name="ssh_config_import_result">Created %1$d, updated %2$d, added %3$d port forwards</string>
+    <!-- Success message after loading the current hosts into the editor. -->
+    <string name="ssh_config_loaded_current">Loaded saved hosts</string>
+    <!-- Error message when parsing or importing fails. Parameter: %1$s = reason -->
+    <string name="ssh_config_error">SSH config error: %1$s</string>
 </resources>
