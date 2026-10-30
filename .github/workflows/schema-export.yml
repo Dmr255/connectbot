@@ -1,7 +1,10 @@
 name: Export Room schema
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [feature/ssh-config-editor]
+    paths-ignore:
+      - "app/schemas/**"
 
 permissions:
   contents: write
@@ -25,6 +28,9 @@ jobs:
           git config user.name "schema-bot"
           git config user.email "schema-bot@users.noreply.github.com"
           git add app/schemas/org.connectbot.data.ConnectBotDatabase/
-          git diff --cached --quiet && echo "No schema changes" && exit 0
+          if git diff --cached --quiet; then
+            echo "No schema changes"
+            exit 0
+          fi
           git commit -m "Add generated Room schema"
-          git push
+          git push origin HEAD:feature/ssh-config-editor
