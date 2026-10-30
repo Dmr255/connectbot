@@ -651,8 +651,10 @@ tasks
     }
 
 // Room writes schemas during KSP, so make sure the schema exists before it is read.
-tasks.matching { it.name.startsWith("ksp") && it.name.endsWith("Kotlin") && !it.name.contains("Test") }
-    .configureEach { generateExportSchema.dependsOn(this) }
+val kspCompileTasks = tasks.matching {
+    it.name.startsWith("ksp") && it.name.endsWith("Kotlin") && !it.name.contains("Test")
+}
+generateExportSchema.configure { dependsOn(kspCompileTasks) }
 
 dependencies {
     coreLibraryDesugaring(libs.desugar)
