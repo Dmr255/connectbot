@@ -89,13 +89,13 @@ object SshConfig {
         "serveraliveinterval",
         "connecttimeout",
         "identitiesonly",
+        "proxycommand",
     )
 
     /** Directives that are recognized but only produce an informational issue. */
     val UNSUPPORTED_DIRECTIVES = setOf(
         "include",
         "match",
-        "proxycommand",
         "hostkeyalias",
         "certificatefile",
         "userknownhostsfile",

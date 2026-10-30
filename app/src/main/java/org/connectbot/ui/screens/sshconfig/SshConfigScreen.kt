@@ -286,6 +286,13 @@ private fun PreviewRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        item.entry.proxyCommand?.let { command ->
+            Text(
+                stringResource(R.string.ssh_config_proxycommand_note, command),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         item.changes.forEach { change ->
             Text(
                 stringResource(R.string.ssh_config_change, change.label, change.current, change.incoming),

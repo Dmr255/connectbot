@@ -72,6 +72,7 @@ import org.connectbot.sshlib.SshKeys
 import org.connectbot.sshlib.SshSession
 import org.connectbot.sshlib.SshSigning
 import org.connectbot.sshlib.transport.IpVersion
+import org.connectbot.sshlib.transport.TransportException
 import org.connectbot.sshlib.transport.TransportFactory
 import org.connectbot.util.CryptoProviderState
 import org.connectbot.util.HostConstants
@@ -802,17 +803,49 @@ open class SSH : AbsTransport {
         }
     }
 
+    /**
+     * Builds a transport that runs the host's `ProxyCommand` on a bundled helper.
+     *
+     * Returns null when the host has no `ProxyCommand`, so the caller keeps the
+     * default TCP path. When a command is present but cannot run on Android, the
+     * returned factory fails loudly: silently falling back to a direct connection
+     * would hang against tunnel-only servers.
+     */
+    private fun proxyTransportFactory(host: Host): TransportFactory? {
+        val raw = host.proxyCommand?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val spec = ProxyCommand.parse(raw, host.hostname, host.port, host.username)
+        if (spec == null) {
+            return failingProxyFactory(manager?.res?.getString(R.string.terminal_proxycommand_unparsable, raw) ?: raw)
+        }
+        if (spec.kind != ProxyCommandKind.CLOUDFLARED) {
+            return failingProxyFactory(manager?.res?.getString(R.string.terminal_proxycommand_unsupported, spec.commandLine) ?: spec.commandLine)
+        }
+        val context = manager
+        val executable = context?.let { CloudflaredTunnel.resolveExecutable(it) }
+        if (executable == null) {
+            return failingProxyFactory(manager?.res?.getString(R.string.terminal_proxycommand_helper_missing) ?: spec.commandLine)
+        }
+        bridge?.outputLine(manager?.res?.getString(R.string.terminal_proxycommand_starting, spec.commandLine))
+        return CloudflaredTunnel.transportFactory(executable, spec) { line -> bridge?.outputLine(line) }
+    }
+
+    private fun failingProxyFactory(message: String): TransportFactory {
+        bridge?.outputLine(message)
+        return TransportFactory { throw TransportException(message) }
+    }
+
     private suspend fun connectToJumpHost(jumpHost: Host, destination: Host, jumpTransportFactory: TransportFactory?, dispatchers: CoroutineDispatchers): TransportFactory? {
         bridge?.outputLine(manager?.res?.getString(R.string.terminal_connecting_via_jump, jumpHost.nickname))
 
         val policy = resolveCryptoPolicy(jumpHost, dispatchers) ?: return null
+        val proxyFactory = jumpTransportFactory ?: proxyTransportFactory(jumpHost)
         val config = SshClientConfig {
             // Interactive host-key approval and slow servers must not have a fixed deadline.
             handshakeTimeoutMs = 0L
             cryptoPolicy(policy)
             algorithmWarningHandler = { recordPolicyWarnings(jumpHost, listOf(it)) }
-            if (jumpTransportFactory != null) {
-                this.transportFactory = jumpTransportFactory
+            if (proxyFactory != null) {
+                this.transportFactory = proxyFactory
             } else {
                 this.host = jumpHost.hostname
                 this.port = jumpHost.port
@@ -1018,13 +1051,16 @@ open class SSH : AbsTransport {
             onDisconnect()
             return
         }
+        // ProxyJump wins over ProxyCommand, matching OpenSSH. A null factory here
+        // simply means the host has no ProxyCommand, so the default TCP path is used.
+        val destinationProxy = if (jumpHosts.isEmpty()) proxyTransportFactory(currentHost) else transportFactory
         val config = SshClientConfig {
             // Interactive host-key approval and slow servers must not have a fixed deadline.
             handshakeTimeoutMs = 0L
             cryptoPolicy(policy)
             algorithmWarningHandler = { recordPolicyWarnings(currentHost, listOf(it)) }
-            if (transportFactory != null) {
-                this.transportFactory = transportFactory
+            if (destinationProxy != null) {
+                this.transportFactory = destinationProxy
             } else {
                 this.host = currentHost.hostname
                 this.port = currentHost.port

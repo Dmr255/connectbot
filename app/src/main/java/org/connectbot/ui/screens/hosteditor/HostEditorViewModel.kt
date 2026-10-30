@@ -88,6 +88,7 @@ data class HostEditorUiState(
     val automationCount: Int = 0,
     val jumpHostId: UUID? = null,
     val availableJumpHosts: List<Host> = emptyList(),
+    val proxyCommand: String = "",
     val ipVersion: String = "IPV4_AND_IPV6",
     val telnetEchoMode: TelnetEchoMode = TelnetEchoMode.AUTO,
     val telnetNegotiationMode: TelnetNegotiationMode = TelnetNegotiationMode.INTERACTIVE,
@@ -239,6 +240,7 @@ class HostEditorViewModel @Inject constructor(
                             stayConnected = host.stayConnected,
                             quickDisconnect = host.quickDisconnect,
                             jumpHostId = host.jumpHostId,
+                            proxyCommand = host.proxyCommand.orEmpty(),
                             ipVersion = host.ipVersion,
                             telnetEchoMode = host.telnetEchoMode,
                             telnetNegotiationMode = host.telnetNegotiationMode,
@@ -427,6 +429,10 @@ class HostEditorViewModel @Inject constructor(
         _uiState.update { it.copy(jumpHostId = value, hasUnsavedChanges = true) }
     }
 
+    fun updateProxyCommand(value: String) {
+        _uiState.update { it.copy(proxyCommand = value, hasUnsavedChanges = true) }
+    }
+
     fun updateTelnetEchoMode(value: TelnetEchoMode) {
         _uiState.update { it.copy(telnetEchoMode = value, hasUnsavedChanges = true) }
     }
@@ -519,6 +525,7 @@ class HostEditorViewModel @Inject constructor(
                 scrollbackLines = existingHost?.scrollbackLines ?: 140,
                 useCtrlAltAsMetaKey = existingHost?.useCtrlAltAsMetaKey ?: false,
                 jumpHostId = jumpHostId,
+                proxyCommand = if (state.protocol == "ssh") state.proxyCommand.ifBlank { null } else null,
                 ipVersion = state.ipVersion,
                 telnetEchoMode = state.telnetEchoMode,
                 telnetNegotiationMode = state.telnetNegotiationMode,

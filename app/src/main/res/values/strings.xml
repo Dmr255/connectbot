@@ -1372,6 +1372,10 @@
 	<string name="hostpref_jumphost_title">Jump host (ProxyJump)</string>
 	<!-- Summary text explaining jump host functionality -->
 	<string name="hostpref_jumphost_summary">Connect through another SSH host</string>
+	<!-- Label for the ProxyCommand field -->
+	<string name="hostpref_proxycommand_title">ProxyCommand</string>
+	<!-- Help text under the ProxyCommand field -->
+	<string name="hostpref_proxycommand_summary">Runs a local helper instead of a direct TCP connection. cloudflared access ssh is supported.</string>
 	<!-- Option for no jump host (direct connection) -->
 	<string name="list_jumphost_none">None (direct connection)</string>
 	<!-- Terminal message when connecting via jump host -->
@@ -1388,6 +1392,14 @@
 	<string name="terminal_jump_not_found">Jump host not found in saved hosts</string>
 	<!-- Password prompt prefix for jump host -->
 	<string name="terminal_jump_password">Password for jump host %s:</string>
+	<!-- Terminal message shown when a ProxyCommand starts -->
+	<string name="terminal_proxycommand_starting">Using ProxyCommand: %s</string>
+	<!-- Error when ProxyCommand uses a program that Android cannot execute -->
+	<string name="terminal_proxycommand_unsupported">ProxyCommand is not supported on Android: %s (only cloudflared is bundled)</string>
+	<!-- Error when ProxyCommand cannot be parsed -->
+	<string name="terminal_proxycommand_unparsable">Could not parse ProxyCommand: %s</string>
+	<!-- Error when the bundled Cloudflare Tunnel client is missing from this build -->
+	<string name="terminal_proxycommand_helper_missing">The bundled Cloudflare Tunnel client is missing from this build, so ProxyCommand cannot run</string>
 
 	<!-- Button text to view application logs for debugging -->
 	<string name="view_logs">View Logs</string>
@@ -2464,6 +2476,8 @@
     <string name="ssh_config_decision">Action</string>
     <!-- Line describing a changed host field. Parameters: %1$s = field, %2$s = current value, %3$s = new value -->
     <string name="ssh_config_change">%1$s: %2$s → %3$s</string>
+    <!-- Shown in the import preview for hosts that use ProxyCommand -->
+    <string name="ssh_config_proxycommand_note">ProxyCommand: %1$s</string>
     <!-- Shown when an imported config contains no usable Host blocks. -->
     <string name="ssh_config_no_hosts">No importable Host blocks found</string>
     <!-- Result summary after importing. Parameters: %1$d = created, %2$d = updated, %3$d = forwards -->

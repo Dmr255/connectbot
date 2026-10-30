@@ -163,6 +163,15 @@ data class Host(
 
     @ColumnInfo(name = "telnet_newline_policy", defaultValue = "'LF_TO_CRLF'")
     val telnetNewlinePolicy: TelnetNewlinePolicy = TelnetNewlinePolicy.LF_TO_CRLF,
+
+    /**
+     * OpenSSH-style `ProxyCommand` used to reach this host.
+     *
+     * Only the bundled Cloudflare Tunnel client can run on Android, but the raw
+     * value is stored so it can be shown, edited, and re-exported.
+     */
+    @ColumnInfo(name = "proxy_command")
+    val proxyCommand: String? = null,
 ) {
     /**
      * Get the URI representation of this host (Java interop helper).

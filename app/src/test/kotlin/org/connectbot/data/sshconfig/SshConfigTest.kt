@@ -310,4 +310,37 @@ class SshConfigTest {
         assertThat(SshConfigConversion.parseForward("8080 host:80", remote = false))
             .isEqualTo(SshConfigForward.Local("localhost", 8080, "host", 80))
     }
+
+    @Test
+    fun convert_keepsProxyCommand() {
+        val document = SshConfig.parse(
+            """
+            Host tunnel
+                HostName ssh.example.com
+                User damar
+                ProxyCommand cloudflared access ssh --hostname %h
+        """.trimIndent(),
+        )
+
+        val entry = SshConfigConversion.convert(document).entries.single()
+        assertThat(entry.proxyCommand).isEqualTo("cloudflared access ssh --hostname %h")
+        assertThat(document.issues).isEmpty()
+    }
+
+    @Test
+    fun export_includesProxyCommand() {
+        val host = Host(
+            id = UUID.randomUUID(),
+            nickname = "tunnel",
+            hostname = "ssh.example.com",
+            username = "damar",
+            proxyCommand = "cloudflared access ssh --hostname %h",
+        )
+
+        val text = SshConfigImport.export(listOf(host), emptyMap(), emptyMap())
+        assertThat(text).contains("ProxyCommand cloudflared access ssh --hostname %h")
+
+        val entry = SshConfigConversion.convert(SshConfig.parse(text)).entries.single()
+        assertThat(entry.proxyCommand).isEqualTo("cloudflared access ssh --hostname %h")
+    }
 }

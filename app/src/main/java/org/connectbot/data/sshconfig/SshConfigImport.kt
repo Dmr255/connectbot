@@ -199,6 +199,10 @@ object SshConfigImport {
                 }
                 ?: base.jumpHostId
 
+            if (entry.proxyCommand != null && jumpHostId != null) {
+                warnings += "ProxyJump takes precedence over ProxyCommand for ${entry.alias}"
+            }
+
             val merged = base.copy(
                 nickname = if (item.isNew) entry.alias else base.nickname,
                 protocol = "ssh",
@@ -210,6 +214,7 @@ object SshConfigImport {
                 useAuthAgent = entry.forwardAgent ?: base.useAuthAgent,
                 pubkeyId = pubkeyId,
                 jumpHostId = jumpHostId,
+                proxyCommand = entry.proxyCommand ?: base.proxyCommand,
                 repositoryId = base.repositoryId,
                 isTemporary = false,
             )
@@ -287,6 +292,9 @@ object SshConfigImport {
                 builder.append("    HostName ").append(quoteIfNeeded(host.hostname)).append('\n')
                 if (host.username.isNotEmpty()) builder.append("    User ").append(quoteIfNeeded(host.username)).append('\n')
                 if (host.port != SshConfigConversion.DEFAULT_SSH_PORT) builder.append("    Port ").append(host.port).append('\n')
+                host.proxyCommand?.takeIf { it.isNotBlank() }?.let { command ->
+                    builder.append("    ProxyCommand ").append(command).append('\n')
+                }
                 if (host.compression) builder.append("    Compression yes\n")
                 host.useAuthAgent?.takeIf { it != HostConstants.AUTHAGENT_NO }?.let {
                     builder.append("    ForwardAgent ").append(if (it == HostConstants.AUTHAGENT_YES) "yes" else "no").append('\n')

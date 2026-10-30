@@ -171,6 +171,7 @@ fun HostEditorScreen(
             )
         },
         onJumpHostChange = viewModel::updateJumpHostId,
+        onProxyCommandChange = viewModel::updateProxyCommand,
         onIpVersionChange = viewModel::updateIpVersion,
         onTelnetEchoModeChange = viewModel::updateTelnetEchoMode,
         onTelnetNegotiationModeChange = viewModel::updateTelnetNegotiationMode,
@@ -215,6 +216,7 @@ fun HostEditorScreenContent(
     onClearPassword: () -> Unit,
     onSaveHost: suspend () -> Boolean,
     modifier: Modifier = Modifier,
+    onProxyCommandChange: (String) -> Unit = {},
     keyboardContent: @Composable () -> Unit = {},
     onCryptoChange: (HostCryptoConfig) -> Unit = {},
     onResolveCrypto: suspend (HostCryptoConfig) -> SshCryptoPolicy? = { null },
@@ -587,6 +589,21 @@ fun HostEditorScreenContent(
                     jumpHostId = uiState.jumpHostId,
                     availableJumpHosts = uiState.availableJumpHosts,
                     onJumpHostSelect = onJumpHostChange,
+                )
+            }
+
+            // ProxyCommand (advanced SSH settings)
+            if (showAdvancedOptions && uiState.protocol == "ssh") {
+                OutlinedTextField(
+                    value = uiState.proxyCommand,
+                    onValueChange = onProxyCommandChange,
+                    label = { Text(stringResource(R.string.hostpref_proxycommand_title)) },
+                    supportingText = { Text(stringResource(R.string.hostpref_proxycommand_summary)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .testTag("proxy_command_field"),
+                    singleLine = true,
                 )
             }
 

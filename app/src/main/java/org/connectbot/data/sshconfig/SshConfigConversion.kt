@@ -42,6 +42,8 @@ data class SshConfigHostEntry(
     /** `ForwardAgent yes` maps to `"yes"`; absent stays null. */
     val forwardAgent: String?,
     val proxyJump: String?,
+    /** Raw `ProxyCommand` value with placeholders unexpanded, if present. */
+    val proxyCommand: String? = null,
     /** Paths from `IdentityFile` lines, in order. */
     val identityFiles: List<String>,
     val forwards: List<SshConfigForward>,
@@ -141,6 +143,7 @@ object SshConfigConversion {
                 compressionExplicit = values.compression != null,
                 forwardAgent = values.forwardAgent,
                 proxyJump = values.proxyJump,
+                proxyCommand = values.proxyCommand,
                 identityFiles = values.identityFiles.toList(),
                 forwards = values.forwards.toList(),
                 serverAliveInterval = values.serverAliveInterval,
@@ -162,6 +165,7 @@ object SshConfigConversion {
             "compression" -> values.compression = values.compression ?: parseBoolean(directive.value)
             "forwardagent" -> values.forwardAgent = values.forwardAgent ?: parseAgent(directive.value)
             "proxyjump" -> values.proxyJump = values.proxyJump ?: directive.value
+            "proxycommand" -> values.proxyCommand = values.proxyCommand ?: directive.value
             "identityfile" -> values.identityFiles += directive.value
             "serveraliveinterval" -> values.serverAliveInterval = values.serverAliveInterval ?: directive.value.toIntOrNull()
             "connecttimeout" -> values.connectTimeout = values.connectTimeout ?: directive.value.toIntOrNull()
@@ -262,6 +266,7 @@ object SshConfigConversion {
         var compression: Boolean? = null
         var forwardAgent: String? = null
         var proxyJump: String? = null
+        var proxyCommand: String? = null
         val identityFiles = mutableListOf<String>()
         val forwards = mutableListOf<SshConfigForward>()
         var serverAliveInterval: Int? = null

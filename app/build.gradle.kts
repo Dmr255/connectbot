@@ -94,6 +94,43 @@ plugins {
 val moshReleaseTag = rootProject.file("gradle/mosh4android.version")
     .readLines().first { it.isNotBlank() && !it.startsWith("#") }.trim()
 
+abstract class PrepareCloudflaredArtifact : DefaultTask() {
+    @get:Input abstract val releaseTag: Property<String>
+
+    @get:OutputDirectory abstract val jniLibsDirectory: DirectoryProperty
+
+    @TaskAction
+    fun prepare() {
+        val tag = releaseTag.get()
+        val root = jniLibsDirectory.get().asFile
+        // Only arm64-v8a is bundled: cloudflared's Linux arm64 build is statically
+        // linked, so it runs on Android's Bionic libc without extra libraries.
+        val abi = "arm64-v8a"
+        val target = root.resolve("$abi/libcloudflared.so")
+        if (target.isFile && target.length() > 1_000_000) return
+        target.parentFile.mkdirs()
+        val url = URI("https://github.com/cloudflare/cloudflared/releases/download/$tag/cloudflared-linux-arm64").toURL()
+        val connection = url.openConnection().apply {
+            connectTimeout = 15_000
+            readTimeout = 120_000
+        }
+        connection.getInputStream().buffered().use { input ->
+            target.outputStream().use { output -> input.copyTo(output) }
+        }
+        check(target.length() > 1_000_000) { "cloudflared download looks truncated" }
+        target.setExecutable(true, true)
+    }
+}
+
+val cloudflaredReleaseTag = rootProject.file("gradle/cloudflared.version")
+    .readLines().first { it.isNotBlank() && !it.startsWith("#") }.trim()
+
+val generatedCloudflared = layout.buildDirectory.dir("generated/cloudflared")
+val prepareCloudflaredArtifact = tasks.register<PrepareCloudflaredArtifact>("prepareCloudflaredArtifact") {
+    releaseTag.set(cloudflaredReleaseTag)
+    jniLibsDirectory.set(generatedCloudflared.map { it.dir("jniLibs") })
+}
+
 val generatedOssMosh = layout.buildDirectory.dir("generated/mosh/oss")
 val prepareOssMoshArtifacts = tasks.register<PrepareOssMoshArtifacts>("prepareOssMoshArtifacts") {
     releaseTag.set(moshReleaseTag)
@@ -399,12 +436,14 @@ androidComponents {
     onVariants(selector().withFlavor("license" to "oss")) { variant ->
         variant.sources.jniLibs?.addGeneratedSourceDirectory(prepareOssMoshArtifacts) { it.jniLibsDirectory }
         variant.sources.assets?.addGeneratedSourceDirectory(prepareOssMoshArtifacts) { it.assetsDirectory }
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(prepareCloudflaredArtifact) { it.jniLibsDirectory }
         variant.packaging.jniLibs.useLegacyPackaging.set(true)
         variant.packaging.jniLibs.useLegacyPackagingFromBundle.set(true)
     }
 
     onVariants(selector().withFlavor("license" to "google")) { variant ->
         // The Play-delivered mosh-client needs an executable path in nativeLibraryDir.
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(prepareCloudflaredArtifact) { it.jniLibsDirectory }
         variant.packaging.jniLibs.useLegacyPackaging.set(true)
         variant.packaging.jniLibs.useLegacyPackagingFromBundle.set(true)
     }
@@ -545,15 +584,24 @@ val generateExportSchema by tasks.registering {
             ?.toInt()
             ?: error("Could not find @Database version in $databaseFile")
     val inputFile = file("schemas/org.connectbot.data.ConnectBotDatabase/$schemaVersion.json")
+    val schemaDirectory = file("schemas/org.connectbot.data.ConnectBotDatabase")
     val outputDir = file("build/generated/exportSchema")
     val outputFile = file("$outputDir/export_schema.json")
 
     inputs.file(databaseFile)
-    inputs.file(inputFile)
+    inputs.files(fileTree(schemaDirectory) { include("*.json") })
     outputs.file(outputFile)
 
     doLast {
-        val inputJson = groovy.json.JsonSlurper().parseText(inputFile.readText()) as Map<*, *>
+        // Room writes the schema for a brand-new version during compilation, which
+        // can happen after this task is configured. Prefer the exact version and
+        // fall back to the newest committed schema until that file exists.
+        val resolvedInput =
+            inputFile.takeIf { it.isFile }
+                ?: schemaDirectory.listFiles { f -> f.name.endsWith(".json") }
+                    ?.maxByOrNull { it.nameWithoutExtension.toIntOrNull() ?: -1 }
+                    ?: error("No Room schema found in $schemaDirectory")
+        val inputJson = groovy.json.JsonSlurper().parseText(resolvedInput.readText()) as Map<*, *>
         val database = inputJson["database"] as Map<*, *>
         val entities = database["entities"] as List<*>
 
@@ -601,6 +649,10 @@ tasks
     }.configureEach {
         dependsOn(generateExportSchema)
     }
+
+// Room writes schemas during KSP, so make sure the schema exists before it is read.
+tasks.matching { it.name.startsWith("ksp") && it.name.endsWith("Kotlin") && !it.name.contains("Test") }
+    .configureEach { generateExportSchema.dependsOn(this) }
 
 dependencies {
     coreLibraryDesugaring(libs.desugar)
