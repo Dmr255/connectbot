@@ -45,6 +45,13 @@ class ProcessTransport private constructor(
     @Volatile
     private var closed = false
 
+    private var onClose: (() -> Unit)? = null
+
+    /** Registers cleanup that runs once when the transport closes. */
+    fun onClose(action: () -> Unit) {
+        onClose = action
+    }
+
     override val isConnected: Boolean
         get() = !closed && process.isAlive
 
@@ -83,6 +90,8 @@ class ProcessTransport private constructor(
             process.destroy()
             runCatching { stdout.close() }
         }
+        onClose?.invoke()
+        onClose = null
     }
 
     /** Last stderr lines from the helper, useful for surfacing login prompts. */
@@ -105,7 +114,12 @@ class ProcessTransport private constructor(
          * Starts [executable] with [arguments] and returns a transport wired to
          * its stdio. Throws [TransportException] when the process cannot start.
          */
-        fun start(executable: File, arguments: List<String>, onStderrLine: ((String) -> Unit)? = null): ProcessTransport {
+        fun start(
+            executable: File,
+            arguments: List<String>,
+            environment: Map<String, String> = emptyMap(),
+            onStderrLine: ((String) -> Unit)? = null,
+        ): ProcessTransport {
             if (!executable.isFile) {
                 throw TransportException("Tunnel helper is missing: ${executable.absolutePath}")
             }
@@ -120,6 +134,7 @@ class ProcessTransport private constructor(
             if (!home.isNullOrBlank()) {
                 builder.environment()["HOME"] = home
             }
+            builder.environment().putAll(environment)
             val process = try {
                 builder.start()
             } catch (e: IOException) {

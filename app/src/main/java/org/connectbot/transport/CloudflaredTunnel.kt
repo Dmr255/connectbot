@@ -41,10 +41,30 @@ object CloudflaredTunnel {
         return candidate
     }
 
-    /** A [TransportFactory] that runs the tunnel client for one connection. */
-    fun transportFactory(executable: File, spec: ProxyCommandSpec, onStderrLine: ((String) -> Unit)? = null): TransportFactory = TransportFactory {
+    /**
+     * A [TransportFactory] that runs the tunnel client for one connection.
+     *
+     * The bundled binary is statically linked, so its pure-Go resolver looks for
+     * `/etc/resolv.conf`. Android has no such file and blocks the `[::1]:53`
+     * fallback, so every lookup fails. A loopback [TunnelProxy] moves resolution
+     * back into the app while keeping the tunnel's TLS handshake end to end.
+     */
+    fun transportFactory(
+        executable: File,
+        spec: ProxyCommandSpec,
+        onStderrLine: ((String) -> Unit)? = null,
+    ): TransportFactory = TransportFactory {
         withContext(Dispatchers.IO) {
-            ProcessTransport.start(executable, spec.arguments, onStderrLine)
+            val proxy = TunnelProxy.start()
+            val environment = mapOf("HTTPS_PROXY" to "http://127.0.0.1:${proxy.port}")
+            try {
+                val transport = ProcessTransport.start(executable, spec.arguments, environment, onStderrLine)
+                transport.onClose { proxy.close() }
+                transport
+            } catch (e: Throwable) {
+                proxy.close()
+                throw e
+            }
         }
     }
 }
