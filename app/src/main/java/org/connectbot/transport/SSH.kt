@@ -1466,12 +1466,14 @@ open class SSH : AbsTransport {
             port = DEFAULT_PORT
         }
         val nickname = getDefaultNickname(username, hostname, port)
+        val proxyOverride = HostUriParams.proxyOverride(uri)
 
         return Host.createSshHost(
             nickname,
             hostname ?: "",
             port,
             username ?: "",
+            proxyCommand = proxyOverride?.value,
         )
     }
 

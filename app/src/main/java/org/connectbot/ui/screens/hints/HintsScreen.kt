@@ -51,6 +51,11 @@ private val hints = listOf(
         description = "Tap the + button on the main screen to quickly connect to a host using a URI like ssh://user@hostname:port",
     ),
     Hint(
+        title = "ProxyCommand in a Link",
+        description = "Add proxyCommand to a URI to tunnel without saving a host, e.g. " +
+            "ssh://user@host/?proxyCommand=cloudflared%20access%20ssh%20--hostname%20%25h",
+    ),
+    Hint(
         title = "Volume Keys",
         description = "Use volume up/down to send special keys. Volume Up = Ctrl, Volume Down = Tab",
     ),

@@ -63,6 +63,7 @@ import org.connectbot.data.entity.Host
 import org.connectbot.data.entity.Pubkey
 import org.connectbot.di.CoroutineDispatchers
 import org.connectbot.sshlib.SshSigning
+import org.connectbot.transport.HostUriParams
 import org.connectbot.transport.TransportFactory
 import org.connectbot.util.CryptoProviderState
 import org.connectbot.util.PreferenceConstants
@@ -461,11 +462,20 @@ class TerminalManager :
             ?: TransportFactory.getTransport(scheme)?.createHost(uri)
             ?: throw IllegalArgumentException("No transport found for scheme '$scheme' in URI: $uri")
 
-        // Mark hosts that are absent from the database as temporary
-        val finalHost = if (hostRepository.findHostById(host.id) == null) {
-            host.copy(isTemporary = true)
+        // A `proxyCommand` query parameter overrides the stored value for this one
+        // connection, matching how explicit CLI flags beat config files in OpenSSH.
+        val override = HostUriParams.proxyOverride(uri)
+        val resolvedHost = if (override != null && host.protocol == "ssh") {
+            host.copy(proxyCommand = override.value)
         } else {
             host
+        }
+
+        // Mark hosts that are absent from the database as temporary
+        val finalHost = if (hostRepository.findHostById(resolvedHost.id) == null) {
+            resolvedHost.copy(isTemporary = true)
+        } else {
+            resolvedHost
         }
 
         return openConnection(finalHost)

@@ -205,6 +205,13 @@ data class Host(
         }
 
         if (!isTemporary) builder.appendQueryParameter("hostId", id.toString())
+        // Keep an unsaved host's tunnel in its URI so a reconnect from its
+        // notification rebuilds the same one-line link. Saved hosts read the
+        // value from the database so later edits are not overridden by a
+        // stale notification.
+        if (isTemporary && protocol == "ssh" && !proxyCommand.isNullOrBlank()) {
+            builder.appendQueryParameter("proxyCommand", proxyCommand)
+        }
         return builder.build()
     }
 
@@ -213,13 +220,20 @@ data class Host(
          * Create a new SSH host with default values (Java interop helper).
          */
         @JvmStatic
-        fun createSshHost(nickname: String, hostname: String, port: Int, username: String): Host = Host(
+        fun createSshHost(
+            nickname: String,
+            hostname: String,
+            port: Int,
+            username: String,
+            proxyCommand: String? = null,
+        ): Host = Host(
             id = UUID.randomUUID(),
             nickname = nickname,
             protocol = "ssh",
             username = username,
             hostname = hostname,
             port = port,
+            proxyCommand = proxyCommand,
         )
 
         /**
