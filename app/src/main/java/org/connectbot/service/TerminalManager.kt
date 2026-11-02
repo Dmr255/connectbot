@@ -482,6 +482,16 @@ class TerminalManager :
     }
 
     /**
+     * Open a one-off connection for a [host] that is not stored in the database.
+     *
+     * The caller is expected to navigate to the console using the returned
+     * bridge's host id; the console reuses the live bridge instead of looking
+     * the host up in the repository.
+     */
+    suspend fun openTransientConnection(host: Host): TerminalBridge =
+        openConnection(host.copy(isTemporary = true))
+
+    /**
      * Open a new connection for a host by its database ID.
      * Looks up the host from the repository and creates a connection.
      *

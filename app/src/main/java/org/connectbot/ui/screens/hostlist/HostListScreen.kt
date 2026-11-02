@@ -17,6 +17,7 @@
 
 package org.connectbot.ui.screens.hostlist
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -97,6 +98,7 @@ import org.connectbot.data.entity.Host
 import org.connectbot.data.entity.Pubkey
 import org.connectbot.service.DisconnectReason
 import org.connectbot.service.descriptionResource
+import org.connectbot.transport.QuickConnect
 import org.connectbot.ui.LocalTerminalManager
 import org.connectbot.ui.PreviewScreen
 import org.connectbot.ui.components.DisconnectAllDialog
@@ -234,6 +236,76 @@ fun HostListScreen(
     }
 
     var shortcutHost by remember { mutableStateOf<Host?>(null) }
+    var showQuickConnect by remember { mutableStateOf(false) }
+    var quickConnectText by remember { mutableStateOf("") }
+    var quickConnectError by remember { mutableStateOf(false) }
+
+    fun submitQuickConnect() {
+        val raw = quickConnectText.trim()
+        if (raw.isEmpty()) return
+        val manager = terminalManager ?: return
+        scope.launch {
+            try {
+                val bridge = if (raw.contains("://")) {
+                    manager.openConnection(Uri.parse(raw))
+                } else {
+                    val request = QuickConnect.parse(raw)
+                    if (request == null) {
+                        quickConnectError = true
+                        return@launch
+                    }
+                    val nickname = if (request.username.isNotEmpty()) {
+                        "${request.username}@${request.hostname}"
+                    } else {
+                        request.hostname
+                    }
+                    manager.openTransientConnection(
+                        Host.createSshHost(
+                            nickname = nickname,
+                            hostname = request.hostname,
+                            port = request.port,
+                            username = request.username,
+                            proxyCommand = request.proxyCommand,
+                        ),
+                    )
+                }
+                showQuickConnect = false
+                quickConnectText = ""
+                quickConnectError = false
+                onNavigateToConsole(bridge.host)
+            } catch (e: Exception) {
+                quickConnectError = true
+            }
+        }
+    }
+
+    if (showQuickConnect) {
+        TextInputAlertDialog(
+            onDismissRequest = {
+                showQuickConnect = false
+                quickConnectError = false
+            },
+            onConfirm = ::submitQuickConnect,
+            value = quickConnectText,
+            onValueChange = {
+                quickConnectText = it
+                quickConnectError = false
+            },
+            title = { Text(stringResource(R.string.quick_connect_title)) },
+            message = { Text(stringResource(R.string.quick_connect_message)) },
+            placeholder = { Text(stringResource(R.string.quick_connect_placeholder)) },
+            confirmButtonText = stringResource(R.string.quick_connect_action),
+            confirmEnabled = quickConnectText.isNotBlank(),
+            isError = quickConnectError,
+            supportingText = if (quickConnectError) {
+                { Text(stringResource(R.string.quick_connect_invalid)) }
+            } else {
+                null
+            },
+            singleLine = false,
+            maxLines = 4,
+        )
+    }
 
     if (shortcutHost != null) {
         ShortcutCustomizationDialog(
@@ -267,6 +339,7 @@ fun HostListScreen(
         onNavigateToProfiles = onNavigateToProfiles,
         onNavigateToHelp = onNavigateToHelp,
         onNavigateToSshConfig = onNavigateToSshConfig,
+        onQuickConnect = { showQuickConnect = true },
         onToggleSortOrder = viewModel::toggleSortOrder,
         onDeleteHost = viewModel::deleteHost,
         onDuplicateHost = viewModel::duplicateHost,
@@ -303,6 +376,7 @@ fun HostListScreenContent(
     onSelectShortcut: (Host) -> Unit = {},
     onExportHosts: () -> Unit = {},
     onImportHosts: () -> Unit = {},
+    onQuickConnect: () -> Unit = {},
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showDisconnectAllDialog by remember { mutableStateOf(false) }
@@ -382,6 +456,13 @@ fun HostListScreenContent(
                                 onClick = {
                                     showMenu = false
                                     onImportHosts()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.list_menu_quick_connect)) },
+                                onClick = {
+                                    showMenu = false
+                                    onQuickConnect()
                                 },
                             )
                             DropdownMenuItem(

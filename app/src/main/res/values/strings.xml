@@ -2450,6 +2450,20 @@
     <string name="ssh_config_title">SSH config</string>
     <!-- Host list menu item that opens the SSH config editor. -->
     <string name="list_menu_ssh_config">SSH config</string>
+
+    <!-- Quick connect: start a one-off connection by pasting an ssh command line. -->
+    <!-- Host list menu item that opens the quick connect dialog. -->
+    <string name="list_menu_quick_connect">Quick connect</string>
+    <!-- Title of the quick connect dialog. -->
+    <string name="quick_connect_title">Quick connect</string>
+    <!-- Explanation of the accepted syntax in the quick connect dialog. -->
+    <string name="quick_connect_message">Paste an ssh command line or a destination. The host is not saved.</string>
+    <!-- Placeholder showing the accepted syntax. Unformatted: the example contains a bare percent sign. -->
+    <string name="quick_connect_placeholder" formatted="false">ssh user@host -o ProxyCommand="cloudflared access ssh --hostname %h"</string>
+    <!-- Button that starts the connection. -->
+    <string name="quick_connect_action">Connect</string>
+    <!-- Inline error shown when the pasted command cannot be parsed. -->
+    <string name="quick_connect_invalid">Not a usable destination</string>
     <!-- Editor field label for the raw ssh_config text. -->
     <string name="ssh_config_editor_label">ssh_config</string>
     <!-- Button that parses the text and opens the import preview. -->
